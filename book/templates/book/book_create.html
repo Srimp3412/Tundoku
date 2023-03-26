@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}書籍作成{% endblock %}
+
+{% block content %}
+    <input type="text" id="isbn">
+    <button onclick="searchBook()">検索</button>
+
+    <form id='createForm' method="POST">{% csrf_token %}
+        {{form.as_p}}
+        <button type="submit">作成する</button>
+    </form>
+
+    <!--ISBNから本を検索-->
+    <script>
+        alert("ISBNを入力してください")
+        const searchBook = () => {
+            const isbn = document.getElementById("isbn").value;
+            const url = `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const book = data.items[0];
+                    const title = book.volumeInfo.title;
+                    const author = book.volumeInfo.authors[0];
+                    const description = book.volumeInfo.description;
+                    const thumbnail = book.volumeInfo.imageLinks.thumbnail;
+                    alert(thumbnail)
+                
+                function getImage(url, callback) {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.responseType = 'blob';
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            callback(xhr.response);
+                        }
+                    };
+                    xhr.send();
+                }
+                
+                <!--formのフィールドに値を入力する-->
+                var form = document.getElementById('createForm');
+                form.elements['title'].value = title;
+                form.elements['author'].value = author;
+                form.elements['description'].value = description;
+                form.elements['isbn'].value = isbn;
+
+                var fileInput = form.elements['book_img'];
+
+                getImage(thumbnail, function(blob) {
+                    var file = new File([blob], 'image.jpg'); // BlobオブジェクトをFileオブジェクトに変換
+                    fileInput.files[0] = file; // ファイル選択フィールドにファイルを設定
+                });
+
+                form.elements['book_img'].value = setImage();
+            })
+            .catch(error => {
+                console.error(`Error: ${error}`);
+            });
+        };
+    </script>
+{% endblock content%}
